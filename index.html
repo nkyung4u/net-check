@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인터넷 연결 확인</title>
+<style>
+  :root {
+    --bg: #FAF8F2;
+    --text: #5A554A;
+    --text-dim: #A9A294;
+    --line: #E5E0D4;
+    --ok: #3B8A5A;
+    --off: #C0504A;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1C1B18;
+      --text: #C8C2B4;
+      --text-dim: #6E695E;
+      --line: #34322C;
+      --ok: #6DBF8E;
+      --off: #E08077;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 1.5rem;
+  }
+  .stage {
+    display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+    width: 300px; max-width: 100%;
+  }
+  .cat-wrap { position: relative; width: 240px; height: 230px; cursor: pointer; }
+  .cat-wrap > div {
+    position: absolute; inset: 0; opacity: 0; transition: opacity .5s;
+  }
+  .cat-wrap > div.active { opacity: 1; }
+  .status {
+    font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0; transition: color .4s;
+  }
+  .status.online { color: var(--ok); }
+  .status.offline { color: var(--off); }
+  .timer { width: 200px; height: 1px; background: var(--line); overflow: hidden; }
+  .timer > div { height: 100%; width: 0%; background: var(--text-dim); }
+  button {
+    font-family: inherit; font-size: 11px; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--text); background: transparent; border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 24px; cursor: pointer; transition: background .2s;
+  }
+  button:hover { background: var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  .hint { font-size: 11px; color: var(--text-dim); margin: 0; }
+
+  @keyframes ckBlink {0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+  @keyframes ckTail {from{transform:rotate(-6deg)}to{transform:rotate(8deg)}}
+  @keyframes plBounce {0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes plTail {from{transform:rotate(-22deg)}to{transform:rotate(30deg)}}
+  @keyframes plPaw {from{transform:rotate(0deg)}to{transform:rotate(-38deg)}}
+  @keyframes plRoll {from{transform:translateX(-6px) rotate(-30deg)}to{transform:translateX(6px) rotate(30deg)}}
+  @keyframes slBreathe {0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.04)}}
+  @keyframes slZzz {0%{opacity:0;transform:translate(0,0) scale(.7)}20%{opacity:.9}80%{opacity:.3}100%{opacity:0;transform:translate(-10px,-38px) scale(1.2)}}
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="cat-wrap" id="catWrap" title="클릭해서 상태 전환 미리보기">
+
+    <div id="cat-checking" class="active">
+      <svg viewBox="0 0 240 230" xmlns="http://www.w3.org/2000/svg" width="240" height="230">
+        <g style="transform-origin:60px 195px;animation:ckTail 1.6s ease-in-out infinite alternate;">
+          <path d="M55 200 Q20 205 26 175 Q30 158 46 168" stroke="#5A5A5A" stroke-width="20" fill="none" stroke-linecap="round"/>
+        </g>
+        <path d="M70 205 Q58 120 120 112 Q188 118 178 205 Z" fill="#F2EEE2"/>
+        <ellipse cx="120" cy="205" rx="62" ry="16" fill="#F2EEE2"/>
+        <path d="M70 195 Q56 150 78 140 Q96 138 92 178 Q90 198 70 198 Z" fill="#6B6B6B"/>
+        <ellipse cx="155" cy="200" rx="10" ry="6" fill="#E8E2D2"/>
+        <ellipse cx="120" cy="200" rx="10" ry="6" fill="#E8E2D2"/>
+        <ellipse cx="128" cy="92" rx="50" ry="46" fill="#F2EEE2"/>
+        <path d="M82 92 Q78 50 110 52 Q150 56 142 96 Q120 120 90 112 Q80 104 82 92 Z" fill="#2E2E2E"/>
+        <polygon points="86,58 92,28 116,52" fill="#2E2E2E"/><polygon points="92,55 96,36 110,52" fill="#E8A0A8"/>
+        <polygon points="142,52 168,30 168,60" fill="#F2EEE2"/><polygon points="146,53 164,38 162,57" fill="#E8A0A8"/>
+        <g style="transform-origin:108px 90px;animation:ckBlink 4s ease-in-out infinite;">
+          <ellipse cx="108" cy="90" rx="6" ry="7" fill="#2E2E2E"/><circle cx="106" cy="87" r="1.6" fill="white"/>
+        </g>
+        <g style="transform-origin:150px 90px;animation:ckBlink 4s ease-in-out .1s infinite;">
+          <ellipse cx="150" cy="90" rx="6" ry="7" fill="#3A3A3A"/><circle cx="148" cy="87" r="1.6" fill="white"/>
+        </g>
+        <path d="M126,100 L130,104 L134,100 Q130,96 126,100 Z" fill="#E8909A"/>
+        <path d="M130,104 Q126,109 121,106 M130,104 Q134,109 139,106" fill="none" stroke="#8A7A6A" stroke-width="1.3" stroke-linecap="round"/>
+        <line x1="138" y1="96" x2="178" y2="90" stroke="#B8AE98" stroke-width="1" opacity=".6"/>
+        <line x1="138" y1="101" x2="178" y2="101" stroke="#B8AE98" stroke-width="1" opacity=".6"/>
+        <line x1="138" y1="106" x2="176" y2="112" stroke="#B8AE98" stroke-width="1" opacity=".6"/>
+      </svg>
+    </div>
+
+    <div id="cat-playing">
+      <svg viewBox="0 0 240 230" xmlns="http://www.w3.org/2000/svg" width="240" height="230">
+        <g style="transform-origin:60px 195px;animation:plTail .4s ease-in-out infinite alternate;">
+          <path d="M55 200 Q16 200 24 165 Q30 146 48 160" stroke="#5A5A5A" stroke-width="20" fill="none" stroke-linecap="round"/>
+        </g>
+        <g style="transform-origin:120px 200px;animation:plBounce .7s ease-in-out infinite;">
+          <path d="M70 205 Q58 120 120 112 Q188 118 178 205 Z" fill="#F2EEE2"/>
+          <ellipse cx="120" cy="205" rx="62" ry="16" fill="#F2EEE2"/>
+          <path d="M70 195 Q56 150 78 140 Q96 138 92 178 Q90 198 70 198 Z" fill="#6B6B6B"/>
+          <ellipse cx="118" cy="200" rx="10" ry="6" fill="#E8E2D2"/>
+          <ellipse cx="128" cy="92" rx="50" ry="46" fill="#F2EEE2"/>
+          <path d="M82 92 Q78 50 110 52 Q150 56 142 96 Q120 120 90 112 Q80 104 82 92 Z" fill="#2E2E2E"/>
+          <polygon points="86,58 92,28 116,52" fill="#2E2E2E"/><polygon points="92,55 96,36 110,52" fill="#E8A0A8"/>
+          <polygon points="142,52 168,30 168,60" fill="#F2EEE2"/><polygon points="146,53 164,38 162,57" fill="#E8A0A8"/>
+          <path d="M103,88 Q108,83 113,88" fill="none" stroke="#2E2E2E" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M145,88 Q150,83 155,88" fill="none" stroke="#3A3A3A" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M126,100 L130,104 L134,100 Q130,96 126,100 Z" fill="#E8909A"/>
+          <path d="M130,104 Q126,109 121,106 M130,104 Q134,109 139,106" fill="none" stroke="#8A7A6A" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="138" y1="96" x2="178" y2="90" stroke="#B8AE98" stroke-width="1" opacity=".6"/>
+          <line x1="138" y1="101" x2="178" y2="101" stroke="#B8AE98" stroke-width="1" opacity=".6"/>
+        </g>
+        <g style="transform-origin:172px 188px;animation:plPaw .45s ease-in-out infinite alternate;">
+          <ellipse cx="178" cy="190" rx="13" ry="20" fill="#F2EEE2"/>
+        </g>
+        <g style="transform-origin:205px 205px;animation:plRoll .5s ease-in-out infinite alternate;">
+          <circle cx="205" cy="205" r="15" fill="#FF6B6B"/>
+          <path d="M193,200 Q205,195 217,200 M192,208 Q205,213 218,208" fill="none" stroke="white" stroke-width="1.5" opacity=".5"/>
+        </g>
+      </svg>
+    </div>
+
+    <div id="cat-sleeping">
+      <svg viewBox="0 0 240 230" xmlns="http://www.w3.org/2000/svg" width="240" height="230">
+        <path d="M188 188 Q224 182 218 152 Q214 138 198 148" stroke="#5A5A5A" stroke-width="18" fill="none" stroke-linecap="round"/>
+        <g style="transform-origin:120px 175px;animation:slBreathe 3.8s ease-in-out infinite;">
+          <ellipse cx="120" cy="178" rx="78" ry="46" fill="#F2EEE2"/>
+          <path d="M48 172 Q44 140 78 138 Q104 140 96 180 Q90 200 60 196 Q46 188 48 172 Z" fill="#6B6B6B"/>
+          <ellipse cx="62" cy="200" rx="20" ry="9" fill="#D8D2C2"/>
+        </g>
+        <ellipse cx="120" cy="138" rx="44" ry="40" fill="#F2EEE2"/>
+        <path d="M78 138 Q74 100 104 100 Q142 104 136 142 Q116 162 88 156 Q78 150 78 138 Z" fill="#2E2E2E"/>
+        <polygon points="82,108 88,80 110,102" fill="#2E2E2E"/><polygon points="87,105 91,86 104,102" fill="#E8A0A8"/>
+        <polygon points="136,102 160,82 158,110" fill="#F2EEE2"/><polygon points="139,103 155,88 153,107" fill="#E8A0A8"/>
+        <path d="M97,134 Q103,129 109,134" fill="none" stroke="#2E2E2E" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M138,134 Q144,129 150,134" fill="none" stroke="#5A5A5A" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M120,144 L124,148 L128,144 Q124,140 120,144 Z" fill="#E8909A"/>
+        <line x1="132" y1="140" x2="170" y2="136" stroke="#B8AE98" stroke-width="1" opacity=".5"/>
+        <line x1="132" y1="145" x2="170" y2="146" stroke="#B8AE98" stroke-width="1" opacity=".5"/>
+        <text style="animation:slZzz 2.6s ease-out 0s infinite;" font-size="13" font-family="Georgia,serif" fill="#8A8A8A" x="168" y="124" opacity="0">z</text>
+        <text style="animation:slZzz 2.6s ease-out .8s infinite;" font-size="18" font-family="Georgia,serif" fill="#8A8A8A" x="178" y="104" opacity="0">z</text>
+        <text style="animation:slZzz 2.6s ease-out 1.6s infinite;" font-size="24" font-family="Georgia,serif" fill="#8A8A8A" x="188" y="82" opacity="0">Z</text>
+      </svg>
+    </div>
+
+  </div>
+
+  <p class="status" id="statusText">CHECKING</p>
+  <div class="timer"><div id="timerFill"></div></div>
+  <button id="checkBtn">재확인</button>
+  <p class="hint">고양이 클릭 → 상태 미리보기</p>
+</div>
+
+<script>
+  const STATES = ['playing', 'sleeping', 'checking'];
+  const statusText = document.getElementById('statusText');
+
+  function setCatState(state) {
+    STATES.forEach(s => {
+      document.getElementById('cat-' + s).classList.toggle('active', s === state);
+    });
+    const map = {
+      checking: ['CHECKING', ''],
+      playing:  ['CONNECTED', 'online'],
+      sleeping: ['OFFLINE', 'offline']
+    };
+    statusText.textContent = map[state][0];
+    statusText.className = 'status' + (map[state][1] ? ' ' + map[state][1] : '');
+  }
+
+  let demoState = 0;
+  document.getElementById('catWrap').addEventListener('click', () => {
+    const order = ['playing', 'sleeping'];
+    demoState = (demoState + 1) % order.length;
+    setCatState(order[demoState]);
+    stopAutoTimer();
+  });
+
+  async function pingTarget(url) {
+    try {
+      const c = new AbortController();
+      const to = setTimeout(() => c.abort(), 5000);
+      await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: c.signal });
+      clearTimeout(to);
+      return true;
+    } catch { return false; }
+  }
+
+  const TARGETS = [
+    'https://www.google.com/favicon.ico',
+    'https://www.cloudflare.com/favicon.ico',
+    'https://github.com/favicon.ico'
+  ];
+  const AUTO_SEC = 30;
+  let autoTimer = null;
+
+  const checkBtn = document.getElementById('checkBtn');
+  checkBtn.addEventListener('click', runCheck);
+
+  async function runCheck() {
+    checkBtn.disabled = true;
+    setCatState('checking');
+    stopAutoTimer();
+    const r = await Promise.all(TARGETS.map(pingTarget));
+    setCatState(r.some(Boolean) ? 'playing' : 'sleeping');
+    checkBtn.disabled = false;
+    startAutoTimer();
+  }
+
+  function startAutoTimer() {
+    const f = document.getElementById('timerFill');
+    f.style.transition = 'none';
+    f.style.width = '0%';
+    let e = 0;
+    requestAnimationFrame(() => {
+      f.style.transition = 'width ' + AUTO_SEC + 's linear';
+      f.style.width = '100%';
+    });
+    autoTimer = setInterval(() => {
+      e++;
+      if (e >= AUTO_SEC) { stopAutoTimer(); runCheck(); }
+    }, 1000);
+  }
+
+  function stopAutoTimer() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    const f = document.getElementById('timerFill');
+    f.style.transition = 'none';
+    f.style.width = '0%';
+  }
+
+  window.addEventListener('online', runCheck);
+  window.addEventListener('offline', () => { setCatState('sleeping'); stopAutoTimer(); });
+
+  runCheck();
+</script>
+</body>
+</html>
